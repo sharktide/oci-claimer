@@ -1,0 +1,34 @@
+name: Oracle ARM Auto Claimer
+
+on:
+  schedule:
+    # Runs roughly every 10 minutes (adjust as needed to avoid rate limits)
+    - cron: '*/1 * * * *'
+  workflow_dispatch: # Allows you to run it manually from GitHub for testing
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Install Oracle Cloud SDK
+      run: pip install oci
+
+    - name: Execute Claim Script
+      env:
+        OCI_USER_ID: ${{ secrets.OCI_USER_ID }}
+        OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
+        OCI_TENANCY_ID: ${{ secrets.OCI_TENANCY_ID }}
+        OCI_REGION: ${{ secrets.OCI_REGION }}
+        OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
+        OCI_AD_NAME: ${{ secrets.OCI_AD_NAME }}
+        OCI_IMAGE_ID: ${{ secrets.OCI_IMAGE_ID }}
+        OCI_SUBNET_ID: ${{ secrets.OCI_SUBNET_ID }}
+      run: python claim_arm.py
