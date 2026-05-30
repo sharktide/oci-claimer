@@ -10,9 +10,6 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
 
-    - name: Install Oracle Cloud SDK
-      run: python3 -m pip install oci
-
     - name: Execute Claim Script
       env:
         OCI_USER_ID: ${{ secrets.OCI_USER_ID }}
