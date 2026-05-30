@@ -19,4 +19,4 @@ jobs:
         OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
         OCI_AD_NAME: ${{ secrets.OCI_AD_NAME }}
         OCI_IMAGE_ID: ${{ secrets.OCI_IMAGE_ID }}
-      run: python3 claim.py
+      run: PYTHONUNBUFFERED=1 python claim.py
