@@ -14,9 +14,11 @@ def get_or_create_network(network_client, compartment_id):
     vcn_name = "AutoClaimVCN-ManualMulti"
     subnet_name = "AutoClaimSubnet-ManualMulti"
     
+    # 1. Fetch VCN list
     vcns = network_client.list_vcns(compartment_id, display_name=vcn_name).data
     if vcns:
-        vcn_id = vcns.id
+        # Grab the ID from the first matching VCN in the list
+        vcn_id = vcns[0].id
         print(f"Using existing VCN: {vcn_id}")
     else:
         print("Creating new VCN...")
@@ -28,9 +30,11 @@ def get_or_create_network(network_client, compartment_id):
         vcn_id = network_client.create_vcn(vcn_details).data.id
         time.sleep(8)
 
+    # 2. Fetch Subnet list
     subnets = network_client.list_subnets(compartment_id, vcn_id=vcn_id, display_name=subnet_name).data
     if subnets:
-        subnet_id = subnets.id
+        # Grab the ID from the first matching Subnet in the list
+        subnet_id = subnets[0].id
         print(f"Using existing Subnet: {subnet_id}")
         return subnet_id
 
@@ -77,7 +81,6 @@ try:
     if not raw_ad_secret:
         raise ValueError("OCI_AD_NAME secret is empty or missing.")
         
-    # Split by comma and strip hidden spaces or newlines
     ad_names = [ad.strip() for ad in raw_ad_secret.split(",") if ad.strip()]
     print(f"Loaded {len(ad_names)} custom domains from secret: {ad_names}")
 
