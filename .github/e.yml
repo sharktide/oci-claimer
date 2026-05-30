@@ -2,9 +2,8 @@ name: Oracle ARM Auto Claimer
 
 on:
   schedule:
-    # Runs roughly every 10 minutes (adjust as needed to avoid rate limits)
     - cron: '*/1 * * * *'
-  workflow_dispatch: # Allows you to run it manually from GitHub for testing
+  workflow_dispatch: 
 
 jobs:
   run-script:
@@ -30,5 +29,4 @@ jobs:
         OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
         OCI_AD_NAME: ${{ secrets.OCI_AD_NAME }}
         OCI_IMAGE_ID: ${{ secrets.OCI_IMAGE_ID }}
-        OCI_SUBNET_ID: ${{ secrets.OCI_SUBNET_ID }}
       run: python claim_arm.py
