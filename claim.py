@@ -1,7 +1,8 @@
 import os
 import time
 import oci
-
+from functools import partial
+print = partial(print, flush=True)
 config = {
     "user": os.environ["OCI_USER_ID"],
     "fingerprint": os.environ["OCI_FINGERPRINT"],
