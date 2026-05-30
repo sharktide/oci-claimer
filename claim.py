@@ -3,7 +3,7 @@ import time
 import oci
 from functools import partial
 
-# flush prints immediately
+# Force flush for safety
 print = partial(print, flush=True)
 
 config = {
@@ -14,13 +14,9 @@ config = {
     "key_content": os.environ["OCI_PRIVATE_KEY"]
 }
 
-# Load SSH public key
+# Load SSH key
 with open("id_ed25519.pub", "r") as f:
     SSH_PUBLIC_KEY = f.read().strip()
-
-
-def heartbeat(msg):
-    print(msg, end="", flush=True)
 
 
 def get_or_create_network(network_client, compartment_id):
@@ -35,12 +31,13 @@ def get_or_create_network(network_client, compartment_id):
     if vcns:
         vcn_id = vcns[0].id
     else:
-        vcn_details = oci.core.models.CreateVcnDetails(
-            compartment_id=compartment_id,
-            display_name=vcn_name,
-            cidr_block="10.30.0.0/16"
-        )
-        vcn_id = network_client.create_vcn(vcn_details).data.id
+        vcn_id = network_client.create_vcn(
+            oci.core.models.CreateVcnDetails(
+                compartment_id=compartment_id,
+                display_name=vcn_name,
+                cidr_block="10.30.0.0/16"
+            )
+        ).data.id
         time.sleep(8)
 
     subnets = network_client.list_subnets(
@@ -52,39 +49,44 @@ def get_or_create_network(network_client, compartment_id):
     if subnets:
         return subnets[0].id
 
-    ig_details = oci.core.models.CreateInternetGatewayDetails(
-        compartment_id=compartment_id,
-        vcn_id=vcn_id,
-        is_enabled=True,
-        display_name="AutoClaimIG-ManualMulti"
-    )
-    ig_id = network_client.create_internet_gateway(ig_details).data.id
+    ig_id = network_client.create_internet_gateway(
+        oci.core.models.CreateInternetGatewayDetails(
+            compartment_id=compartment_id,
+            vcn_id=vcn_id,
+            is_enabled=True,
+            display_name="AutoClaimIG-ManualMulti"
+        )
+    ).data.id
 
-    route_rule = oci.core.models.RouteRule(
-        cidr_block="0.0.0.0/0",
-        destination="0.0.0.0/0",
-        destination_type="CIDR_BLOCK",
-        network_entity_id=ig_id
-    )
+    rt_id = network_client.create_route_table(
+        oci.core.models.CreateRouteTableDetails(
+            compartment_id=compartment_id,
+            vcn_id=vcn_id,
+            display_name="AutoClaimRouteTable-ManualMulti",
+            route_rules=[
+                oci.core.models.RouteRule(
+                    cidr_block="0.0.0.0/0",
+                    destination="0.0.0.0/0",
+                    destination_type="CIDR_BLOCK",
+                    network_entity_id=ig_id
+                )
+            ]
+        )
+    ).data.id
 
-    rt_details = oci.core.models.CreateRouteTableDetails(
-        compartment_id=compartment_id,
-        vcn_id=vcn_id,
-        display_name="AutoClaimRouteTable-ManualMulti",
-        route_rules=[route_rule]
-    )
-    rt_id = network_client.create_route_table(rt_details).data.id
+    subnet_id = network_client.create_subnet(
+        oci.core.models.CreateSubnetDetails(
+            compartment_id=compartment_id,
+            vcn_id=vcn_id,
+            display_name=subnet_name,
+            cidr_block="10.30.1.0/24",
+            route_table_id=rt_id,
+            prohibit_public_ip_on_vnic=False
+        )
+    ).data.id
 
-    subnet_details = oci.core.models.CreateSubnetDetails(
-        compartment_id=compartment_id,
-        vcn_id=vcn_id,
-        display_name=subnet_name,
-        cidr_block="10.30.1.0/24",
-        route_table_id=rt_id,
-        prohibit_public_ip_on_vnic=False
-    )
-
-    return network_client.create_subnet(subnet_details).data.id
+    time.sleep(8)
+    return subnet_id
 
 
 while True:
@@ -120,6 +122,7 @@ while True:
         }
 
         instance_created = False
+        line = ""
 
         for i, target_ad in enumerate(ad_names, start=1):
             try:
@@ -136,12 +139,11 @@ while True:
 
                 response = compute_client.launch_instance(instance_details)
 
-                print("\n")
-                print("====================================")
+                print("\n====================================")
                 print("INSTANCE CREATED SUCCESSFULLY")
                 print("====================================")
                 print(f"AD: {target_ad}")
-                print(f"ID: {response.data.id}")
+                print(f"INSTANCE ID: {response.data.id}")
                 print("====================================")
 
                 instance_created = True
@@ -149,20 +151,22 @@ while True:
 
             except oci.exceptions.ServiceError as e:
                 if "Out of host capacity" in str(e):
-                    heartbeat(str(i))   # 1,2,3...
+                    line += str(i)   # 1 2 3
 
                 elif e.status == 429:
-                    heartbeat("R")
+                    line += "R"
 
                 else:
-                    heartbeat("E")
+                    line += "E"
+
+        # IMPORTANT: newline forces GitHub Actions to flush logs
+        print(line + "!", flush=True)
 
         if instance_created:
             break
 
-        heartbeat("!")
         time.sleep(60)
 
     except Exception:
-        heartbeat("X")
+        print("X!", flush=True)
         time.sleep(60)
