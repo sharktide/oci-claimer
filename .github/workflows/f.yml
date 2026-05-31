@@ -1,0 +1,22 @@
+name: Oracle ARM Auto Claimer
+
+on:
+  workflow_dispatch: 
+
+jobs:
+  run-script:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Execute Claim Script
+      env:
+        OCI_USER_ID: ${{ secrets.OCI_USER_ID }}
+        OCI_FINGERPRINT: ${{ secrets.OCI_FINGERPRINT }}
+        OCI_TENANCY_ID: ${{ secrets.OCI_TENANCY_ID }}
+        OCI_REGION: ${{ secrets.OCI_REGION }}
+        OCI_PRIVATE_KEY: ${{ secrets.OCI_PRIVATE_KEY }}
+        OCI_AD_NAME: ${{ secrets.OCI_AD_NAME }}
+        OCI_IMAGE_ID: ${{ secrets.OCI_IMAGE_ID }}
+      run: PYTHONUNBUFFERED=1 python claim.py
