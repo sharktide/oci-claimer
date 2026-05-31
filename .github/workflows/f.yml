@@ -9,7 +9,8 @@ jobs:
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
-
+    - name: Install oci
+      run: pip install oci
     - name: Execute Claim Script
       env:
         OCI_USER_ID: ${{ secrets.OCI_USER_ID }}
