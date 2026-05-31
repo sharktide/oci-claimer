@@ -1,4 +1,4 @@
-name: Oracle ARM Auto Claimer
+name: Hosted Oracle ARM Auto Claimer
 
 on:
   workflow_dispatch: 
