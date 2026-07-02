@@ -103,8 +103,8 @@ while True:
         subnet_ocid = get_or_create_network(network_client, config["tenancy"])
 
         shape_config = oci.core.models.LaunchInstanceShapeConfigDetails(
-            ocpus=4.0,
-            memory_in_gbs=24.0
+            ocpus=2.0,
+            memory_in_gbs=12.0
         )
 
         source_details = oci.core.models.InstanceSourceViaImageDetails(
